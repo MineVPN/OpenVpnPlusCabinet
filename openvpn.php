@@ -1,22 +1,12 @@
-<div class="content">
-    <?php
-session_start(); // Начало сессии
+<?php
+session_start();
 
-// Проверяем, установлена ли сессия
 if (!isset($_SESSION["authenticated"]) || $_SESSION["authenticated"] !== true) {
-    // Сессия не установлена или пользователь не аутентифицирован, перенаправляем на страницу входа
     header("Location: login.php");
-    exit(); // Важно вызвать exit() после перенаправления, чтобы предотвратить дальнейшее выполнение кода
+    exit();
 }
 
-// Весь ваш код для страницы кабинета может быть добавлен здесь
-?>
-
-
-<?php
-// Проверяем, была ли отправлена форма
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES["config_file"])) {
-    // Проверяем тип файла
     $allowed_extensions = array('ovpn');
     $file_extension = strtolower(pathinfo($_FILES["config_file"]["name"], PATHINFO_EXTENSION));
 
@@ -25,42 +15,38 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES["config_file"])) {
         exit();
     }
 
-    //shell_exec('sudo systemctl stop wg-quick@tun0');
-    //shell_exec('systemctl disable wg-quick@tun0');
+    shell_exec('sudo systemctl stop openvpn@tun1');
     shell_exec('rm /etc/openvpn/tun1.conf');
-    shell_exec('rm /etc/wireguard/*.conf');
+    //shell_exec('rm /etc/wireguard/*.conf');
 
-    // Путь для сохранения файла
     $upload_dir = '/etc/openvpn/';
-    $config_file_ovpn = $upload_dir . "tun1.conf"; // Имя файла задано явно
-    $config_file_conf = $upload_dir . pathinfo($config_file_ovpn, PATHINFO_FILENAME) . ".conf";
+    $config_file_ovpn = $upload_dir . "tun1.conf";
 
-
-    // Перемещаем загруженный файл в нужную директорию
     if (move_uploaded_file($_FILES["config_file"]["tmp_name"], $config_file_ovpn)) {
-        // Переименовываем файл
-        if (rename($config_file_ovpn, $config_file_conf)) {
-            // Запускаем OpenVPN
+        $file_content = file_get_contents($config_file_ovpn);
 
+        // Замена "dev tun" на "dev tun1"
+        $file_content = preg_replace('/\bdev tun\b/', 'dev tun1', $file_content);
 
-            shell_exec('sudo systemctl stop openvpn@tun1');
-            sleep(1);
-            $service_name = pathinfo($config_file_conf, PATHINFO_FILENAME);
-            shell_exec('sudo systemctl start openvpn@tun1');
+        // Вставка строк перед <ca>
+        $insert_text = "pull-filter ignore \"redirect-gateway\"\n" .
+                       "script-security 2\n" .
+                       "up /etc/openvpn/upstream-route.sh";
 
-            // Выводим результат
-            sleep(4);
-            echo "<script>Notice('OpenVPN конфигурация успешно установлена и готова к работе!');</script>";
-        } else {
-            echo "Ошибка при переименовании файла.";
-        }
+        $file_content = preg_replace('/(<ca>)/', $insert_text . "\n$1", $file_content, 1);
+
+        file_put_contents($config_file_ovpn, $file_content);
+
+        shell_exec('sudo systemctl start openvpn@tun1');
+
+        sleep(4);
+        echo "<script>Notice('OpenVPN конфигурация успешно установлена и готова к работе!');</script>";
     } else {
         echo "Ошибка при загрузке файла.";
     }
 }
 include_once 'get_ip.php';
 ?>
-<br>
 
 <div class="container">
     <h2>Установка и запуск OpenVPN</h2>
@@ -71,6 +57,3 @@ include_once 'get_ip.php';
         <input type="submit" class="green-button" value="Установить и запустить">
     </form>
 </div>
-</div>
-
-
