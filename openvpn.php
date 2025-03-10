@@ -43,10 +43,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES["config_file"])) {
             // Запускаем OpenVPN
 
 
-            shell_exec('sudo systemctl stop openvpn');
+            shell_exec('sudo systemctl stop openvpn@tun1');
             sleep(1);
             $service_name = pathinfo($config_file_conf, PATHINFO_FILENAME);
-            shell_exec('sudo systemctl start openvpn@' . $service_name);
+            shell_exec('sudo systemctl start openvpn@tun1');
 
             // Выводим результат
             sleep(4);
