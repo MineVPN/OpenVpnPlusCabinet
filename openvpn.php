@@ -27,7 +27,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES["config_file"])) {
 
     //shell_exec('sudo systemctl stop wg-quick@tun0');
     //shell_exec('systemctl disable wg-quick@tun0');
-    shell_exec('rm /etc/openvpn/*.conf');
+    shell_exec('rm /etc/openvpn/tun1.conf');
     shell_exec('rm /etc/wireguard/*.conf');
 
     // Путь для сохранения файла
