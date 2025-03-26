@@ -39,7 +39,7 @@ if (!array_key_exists($menu_item, $menu_pages)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="favicon.png">
-    <title>SERVER</title>
+    <title>OpenVPN+</title>
     <link rel="stylesheet" href="styles.css">
     <script>
     function Notice(text) {
