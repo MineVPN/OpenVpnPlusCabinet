@@ -17,7 +17,7 @@ if (!isset($_SESSION["authenticated"]) || $_SESSION["authenticated"] !== true) {
     <button id="startButton" class="green-button">Старт</button>
     <button id="stopButton" class="red-button">Стоп</button>
 </div>
-<table>
+<table class="pinger-table">
     <tr>
         <td>Всего</td>
         <td><span id="allCount">0</span> шт.</td>

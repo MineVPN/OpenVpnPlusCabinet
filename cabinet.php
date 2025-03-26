@@ -21,6 +21,7 @@ $menu_item = isset($_GET['menu']) ? $_GET['menu'] : 'openvpn'; // По умол�
 $menu_pages = [
     'openvpn' => 'openvpn.php',
     'ping' => 'pinger.php',
+    'route' => 'route.php'
 ];
 
 // Проверяем, существует ли запрошенная страница в меню
@@ -63,6 +64,7 @@ if (!array_key_exists($menu_item, $menu_pages)) {
     <div class="sidebar">
         <img src="logo.png" class="logo">
         <a class="menu-item" href="cabinet.php?menu=openvpn">OpenVPN</a>
+        <a class="menu-item" href="cabinet.php?menu=route">Route</a>
         <a class="menu-item" href="cabinet.php?menu=ping">Ping</a>
         <a class="menu-item" href="logout.php">Выход</a>
     </div>
