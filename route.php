@@ -1,5 +1,12 @@
 <?php
 
+session_start();
+
+if (!isset($_SESSION["authenticated"]) || $_SESSION["authenticated"] !== true) {
+    header("Location: login.php");
+    exit();
+}
+
 function safeReadFile($filename) {
     return file_exists($filename) ? trim(file_get_contents($filename)) : '';
 }
@@ -109,21 +116,27 @@ cleanUpstreamRouteFile($upstreamRouteFile);
 <body>
     <h2>Список IP-адресов для обхода второго VPN</h2>
     <p>Эти адреса будут использовать только первый VPN.</p>
-    <table id=routeWindow>
-        <?php foreach ($routes as $route): ?>
+    
+    <table id="routeWindow">
+        <?php if (!empty($routes)): ?>
+            <?php foreach ($routes as $route): ?>
+                <tr>
+                    <th class="route-ip">
+                        <?= htmlspecialchars($route) ?>
+                    </th>
+                    <th>
+                        <form method="POST" style="display:inline;">
+                            <input type="hidden" name="delete_ip" value="<?= htmlspecialchars($route) ?>">
+                            <button type="submit" class="red-button">Удалить</button>
+                        </form>
+                    </th>
+                </tr>
+            <?php endforeach; ?>
+        <?php else: ?>
             <tr>
-                <th class=route-ip>
-                    <?= htmlspecialchars($route) ?>
-                </th>
-                <th>
-                    <form method="POST" style="display:inline;">
-                        <input type="hidden" name="delete_ip" value="<?= htmlspecialchars($route) ?>">
-                        <button type="submit" class="red-button">Удалить</button>
-                    </form>
-                </th>
+                <td colspan="2" style="text-align:center; padding:10px;">Список пуст, добавьте IP</td>
             </tr>
-        <?php endforeach; ?>
-
+        <?php endif; ?>
     </table>
 
     <h2>Добавить IP</h2>
@@ -136,3 +149,4 @@ cleanUpstreamRouteFile($upstreamRouteFile);
     </form>
 </body>
 </html>
+

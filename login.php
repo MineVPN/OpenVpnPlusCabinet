@@ -11,8 +11,6 @@
         <div class="login-container">
             <h2>Вход</h2>
             <form class="login-form" action="login.php" method="POST">
-                <label for="username">Пользователь:</label>
-                <input type="text" id="username" name="username" required value='root'>
                 <label for="password">Пароль:</label>
                 <input type="password" id="password" name="password" required>
                 <input type="submit" class="green-button" value="Войти">
@@ -22,15 +20,10 @@
             if ($_SERVER["REQUEST_METHOD"] == "POST") {
             // Получение пароля из формы
                 $password = $_POST["password"];
-
-            // Команда для проверки аутентификации пользователя root
-                $command = "echo '$password' | su -c 'id'";
-
-            // Выполнение команды и получение результата
-                exec($command, $output, $return_var);
+                $truepassword = 'defaultpass';
 
             // Проверка успешности выполнения команды
-                if ($return_var == 0) {
+                if ($password == $truepassword) {
                 // Стартуем сессию
                     session_start();
                 // Устанавливаем флаг авторизации
