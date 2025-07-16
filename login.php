@@ -40,7 +40,7 @@
             // PHP логика без изменений
             if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $password = $_POST["password"];
-                $truepassword = 'HZsNkyoc0W359kT4';
+                $truepassword = 'defaultpass';
                 if ($password == $truepassword) {
                     session_start();
                     $_SESSION["authenticated"] = true;
