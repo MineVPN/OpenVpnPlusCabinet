@@ -52,6 +52,7 @@ if (!isset($_SESSION["authenticated"]) || $_SESSION["authenticated"] !== true) {
     if(isset($_POST['openvpn_start']) && $type == "openvpn") {
         shell_exec("sudo systemctl start openvpn@tun1");
         sleep(5);
+        shell_exec('sudo /bin/bash /var/www/html/upstream-route.sh');
         echo "<script>window.location = 'cabinet.php?menu=openvpn';</script>";
         exit();
     }

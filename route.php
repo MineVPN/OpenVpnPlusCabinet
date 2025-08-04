@@ -52,7 +52,7 @@ $nic = safeReadFile('NIC.txt');
 $gateway = safeReadFile('gateway.txt');
 $routesFile = 'routes.txt';
 $routes = file_exists($routesFile) ? file($routesFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
-$upstreamRouteFile = '/etc/openvpn/upstream-route.sh';
+$upstreamRouteFile = 'upstream-route.sh';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['new_ip'])) {
     $new_ip = trim($_POST['new_ip']);

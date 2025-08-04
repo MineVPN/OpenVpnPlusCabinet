@@ -28,17 +28,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES["config_file"])) {
         $file_content = preg_replace('/\bdev tun\b/', 'dev tun1', $file_content);
 
         // Вставка строк перед <ca>
-        $insert_text = "pull-filter ignore \"redirect-gateway\"\n" .
-                       "script-security 2\n" .
-                       "up /etc/openvpn/upstream-route.sh";
+        $insert_text = "data-ciphers-fallback AES-128-CBC\n" .
+                       "data-ciphers AES-256-GCM:AES-128-GCM:AES-128-CBC\n" .
+                       "pull-filter ignore \"redirect-gateway\"\n" .
+                       "script-security 2";
 
         $file_content = preg_replace('/(<ca>)/', $insert_text . "\n$1", $file_content, 1);
 
         file_put_contents($config_file_ovpn, $file_content);
 
         shell_exec('sudo systemctl start openvpn@tun1');
-
         sleep(4);
+        shell_exec('sudo /bin/bash /var/www/html/upstream-route.sh');
         // Используем нашу новую функцию уведомлений из cabinet.php
         //echo "<script>Notice('OpenVPN конфигурация успешно установлена!', 'success');</script>";
     } else {
