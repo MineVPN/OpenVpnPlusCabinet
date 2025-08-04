@@ -57,8 +57,8 @@ $upstreamRouteFile = 'upstream-route.sh';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['new_ip'])) {
     $new_ip = trim($_POST['new_ip']);
     if (filter_var($new_ip, FILTER_VALIDATE_IP) && !in_array($new_ip, $routes)) {
-        $route = "ip route add $new_ip via $gateway dev $nic table $nic";
-        $rule = "ip rule add to $new_ip table $nic";
+        $route = "ip route add $new_ip via $gateway dev $nic table 200";
+        $rule = "ip rule add to $new_ip table 200";
         updateUpstreamRouteFile($upstreamRouteFile, $route, $rule);
         exec("sudo $route");
         exec("sudo $rule");
@@ -72,10 +72,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['new_ip'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_ip'])) {
     $delete_ip = trim($_POST['delete_ip']);
     if (in_array($delete_ip, $routes)) {
-        $route = "ip route add $delete_ip via $gateway dev $nic table $nic";
-        $rule = "ip rule add to $delete_ip table $nic";
-        $routedel = "ip route del $delete_ip via $gateway dev $nic table $nic";
-        $ruledel = "ip rule del to $delete_ip table $nic";
+        $route = "ip route add $delete_ip via $gateway dev $nic table 200";
+        $rule = "ip rule add to $delete_ip table 200";
+        $routedel = "ip route del $delete_ip via $gateway dev $nic table 200";
+        $ruledel = "ip rule del to $delete_ip table 200";
         removeUpstreamRoute($upstreamRouteFile, $route, $rule);
         exec("sudo $routedel");
         exec("sudo $ruledel");
@@ -128,5 +128,6 @@ cleanUpstreamRouteFile($upstreamRouteFile);
             </button>
         </form>
     </div>
+
 
 </div>
