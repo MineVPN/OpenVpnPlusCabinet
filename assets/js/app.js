@@ -83,6 +83,59 @@ function ovpInitRemotePing(host) {
   setInterval(check, 10000);
 }
 
+/* ── Живое состояние второго VPN ──────────────────────────────
+   Плашка и подпись отрисовываются на сервере один раз. Без опроса
+   туннель успевал подняться, а панель продолжала показывать
+   «Проверяется» до нажатия F5.
+
+   sig — признак материального состояния (есть ли конфиг, поднят ли
+   интерфейс). Когда он меняется, меняется и набор кнопок, а их живьём
+   подменить нельзя — тогда перезагружаем страницу целиком. */
+function ovpInitStatus(sig) {
+  var badge = document.getElementById('state-badge'),
+      note  = document.getElementById('state-note'),
+      conn  = document.getElementById('state-conn');
+  if (!badge) return;
+
+  var timer = null, busy = false, reloading = false;
+
+  function apply(d) {
+    badge.className = 'badge badge--' + d.kind;
+    badge.textContent = d.text;
+    if (note) note.textContent = d.note;
+    if (conn) conn.textContent = d.connection;
+  }
+
+  function tick() {
+    if (busy || reloading) return;
+    busy = true;
+
+    fetch('api/status.php', { cache: 'no-store', credentials: 'same-origin' })
+      .then(function (r) {
+        if (r.status === 403) { window.location = 'login.php'; return null; }
+        return r.json();
+      })
+      .then(function (d) {
+        if (!d || !d.ok) return;
+
+        if (d.sig !== sig) {
+          // Набор кнопок устарел — перерисовываем страницу.
+          // Флаг не даёт запустить перезагрузку дважды.
+          reloading = true;
+          if (timer) clearInterval(timer);
+          window.location.reload();
+          return;
+        }
+        apply(d);
+      })
+      .catch(function () { /* сеть моргнула — покажем на следующем цикле */ })
+      .then(function () { busy = false; });
+  }
+
+  timer = setInterval(tick, 4000);
+  window.addEventListener('beforeunload', function () { if (timer) clearInterval(timer); });
+}
+
 /* ── Журнал событий ──────────────────────────────────────────── */
 function ovpInitLogs() {
   var $ = function (id) { return document.getElementById(id); };

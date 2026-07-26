@@ -32,7 +32,9 @@ $port   = $remote['port'];
  * работать до истечения окна или ручного вмешательства через SSH.
  */
 function ovp_start_tunnel(): bool {
-    ovp_sudo('systemctl reset-failed ' . OVP_UP_SVC);
+    // quiet: при самой первой установке юнит ещё не загружен systemd,
+    // и команда возвращает единицу. Это не ошибка, а нормальный старт.
+    ovp_sudo('systemctl reset-failed ' . OVP_UP_SVC, true);
     ovp_sudo('systemctl enable ' . OVP_UP_SVC);
     if (!ovp_sudo('systemctl start ' . OVP_UP_SVC)) {
         ovp_log('ERR', 'systemctl start ' . OVP_UP_SVC . ' завершился с ошибкой — проверьте правила sudo');
@@ -326,42 +328,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $killswitch = ovp_killswitch_on();
 
 /*
- * Состояние берём у демона, а не по одному наличию интерфейса.
+ * Состояние считает ovp_state_view() — та же функция, что отвечает
+ * api/status.php. Иначе плашка при загрузке страницы и плашка после
+ * автообновления однажды разошлись бы.
  *
- * Интерфейс существует и в режиме обхода — поэтому без этих данных панель
- * писала бы «Подключено» ровно тогда, когда трафик идёт напрямую с адреса
- * сервера. Единственный индикатор для владельца врал бы в момент аварии.
+ * Оно берётся у демона, а не по одному наличию интерфейса: интерфейс
+ * существует и в режиме обхода, поэтому панель писала бы «Подключено»
+ * ровно тогда, когда трафик идёт напрямую с адреса сервера.
  */
-$health = ovp_health();
-
-if (!$hasConfig) {
-    $stateKind = 'off';
-    $stateText = 'Не настроено';
-    $stateNote = 'Сейчас сервер работает как обычный OpenVPN. Клиенты выходят в интернет с адреса самого сервера. Загрузите впн конфиг, чтобы включить двойной впн.';
-} elseif ($up && $health['known'] && $health['bypass']) {
-    $stateKind = 'warn';
-    $stateText = 'Обход';
-    $stateNote = 'Второй впн не отвечает, поэтому клиенты временно выходят напрямую через этот сервер. '
-               . 'Сайты сейчас видят адрес этого сервера. Мониторинг продолжает попытки восстановить туннель — '
-               . 'когда второй впн вернётся, трафик пойдёт через него автоматически.';
-} elseif ($up && $health['known'] && !$health['alive']) {
-    $stateKind = 'err';
-    $stateText = 'Проверяется';
-    $stateNote = 'Интерфейс поднят, но связь через туннель пока не подтверждена. Мониторинг разбирается.';
-} elseif ($up) {
-    $stateKind = 'ok';
-    $stateText = 'Подключено';
-    $stateNote = $health['known']
-        ? 'Трафик клиентов идёт через второй впн.'
-        : 'Интерфейс поднят. Демон мониторинга не отвечает, поэтому подтвердить прохождение трафика нельзя — '
-          . 'проверьте: systemctl status ovpn-healthcheck';
-} else {
-    $stateKind = 'err';
-    $stateText = 'Нет связи';
-    $stateNote = $killswitch
-        ? 'Впн конфиг загружен, но соединение не установлено. Интернета у клиентов сейчас нет — так работает Kill Switch.'
-        : 'Впн конфиг загружен, но соединение не установлено. Клиенты сейчас работают напрямую через этот сервер.';
-}
+$view      = ovp_state_view();
+$stateKind = $view['kind'];
+$stateText = $view['text'];
+$stateNote = $view['note'];
 ?>
 
 <?php if ($notice !== ''): ?>
@@ -371,9 +349,9 @@ if (!$hasConfig) {
 <div class="page-head">
   <div class="page-head__title">
     <h1>Подключение</h1>
-    <span class="badge badge--<?= $stateKind ?>"><?= htmlspecialchars($stateText) ?></span>
+    <span class="badge badge--<?= $stateKind ?>" id="state-badge"><?= htmlspecialchars($stateText) ?></span>
   </div>
-  <p class="page-head__note"><?= htmlspecialchars($stateNote) ?></p>
+  <p class="page-head__note" id="state-note"><?= htmlspecialchars($stateNote) ?></p>
 </div>
 
 <div class="grid-2">
@@ -402,7 +380,7 @@ if (!$hasConfig) {
       </div>
       <div class="fact">
         <span class="fact__k">Соединение</span>
-        <span class="fact__v"><?= $up ? 'активно' : 'нет' ?></span>
+        <span class="fact__v" id="state-conn"><?= htmlspecialchars($view['connection']) ?></span>
       </div>
       <div class="fact">
         <span class="fact__k">Подсеть клиентов</span>
@@ -518,4 +496,5 @@ if (!$hasConfig) {
 <script>
   ovpInitDrop('drop', 'config', 'drop-main');
   ovpInitRemotePing(<?= json_encode($host, JSON_UNESCAPED_UNICODE) ?>);
+  ovpInitStatus(<?= json_encode($view['sig']) ?>);
 </script>

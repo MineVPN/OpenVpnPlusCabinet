@@ -484,17 +484,41 @@ heal_chain() {
     # В режиме временного обхода правило цепочки снято НАМЕРЕННО —
     # восстанавливать его здесь значит сразу же снова отобрать интернет.
     if [ "${CHAIN_BYPASSED:-0}" -eq 0 ] && ! has_chain_rule; then
-        log "WARN" "Потеряно правило цепочки (from ${VPN_SUBNET} table ${TABLE_ID}) — восстанавливаю"
+        # Отличаем ПЕРВУЮ установку от настоящей потери.
+        #
+        # Пока второй VPN не загружен, правила цепочки нет вовсе — это
+        # штатное состояние, а не авария. Когда конфиг появляется, правило
+        # ставится здесь впервые, и сообщение «потеряно, восстанавливаю»
+        # выглядело бы как ошибка на ровном месте.
+        if [ "${CHAIN_ESTABLISHED:-0}" -eq 0 ]; then
+            CHAIN_FIRST_RUN=1
+            log "INFO" "Включаю цепочку: трафик клиентов пойдёт через ${INTERFACE}"
+        else
+            log "WARN" "Потеряно правило цепочки (from ${VPN_SUBNET} table ${TABLE_ID}) — восстанавливаю"
+        fi
         # preference ЗАДАЁМ ЯВНО: без него ip rule берёт номер на 1 меньше
         # текущего минимума и окажется ВЫШЕ локального правила — тогда цепочка
         # перехватит локальный трафик и сломает панель и связь между клиентами.
-        ip rule add from "$VPN_SUBNET" table "$TABLE_ID" preference "$PREF_CHAIN" 2>/dev/null && healed=1
+        if ip rule add from "$VPN_SUBNET" table "$TABLE_ID" preference "$PREF_CHAIN" 2>/dev/null; then
+            healed=1
+            CHAIN_ESTABLISHED=1
+        fi
     fi
     if iface_exists && ! has_chain_route; then
         log "WARN" "Нет default route в таблице ${TABLE_ID} — ставлю"
         ensure_chain_route && healed=1
     fi
-    [ "$healed" -eq 1 ] && log "OK" "Цепочка маршрутизации восстановлена без перезапуска VPN"
+    # Итоговая строка тоже зависит от того, чинили мы или настраивали
+    # впервые: «восстановлена» при первом включении звучит как отчёт
+    # о починке того, что не ломалось.
+    if [ "$healed" -eq 1 ]; then
+        if [ "${CHAIN_FIRST_RUN:-0}" -eq 1 ]; then
+            CHAIN_FIRST_RUN=0
+            log "OK" "Цепочка настроена: клиенты выходят через второй VPN"
+        else
+            log "OK" "Цепочка маршрутизации восстановлена без перезапуска VPN"
+        fi
+    fi
 }
 
 # ══════════════════════════════════════════════════════
@@ -950,6 +974,10 @@ main_loop() {
     LAST_DOWN_REASON=""; LAST_DOWN_AT=0; CHAIN_BYPASSED=0
     LAST_KS_CHECK=0; LAST_BYPASS_SYNC=0; BYPASS_HASH=""; LAST_ACCESS_CHECK=0; CURRENT_MODE=""
     SRV_LAST_TRY=0
+    # Ставилось ли правило цепочки в этом сеансе. Нужно, чтобы отличать
+    # первое включение от настоящей потери правила.
+    CHAIN_ESTABLISHED=0; CHAIN_FIRST_RUN=0
+    has_chain_rule && CHAIN_ESTABLISHED=1
     WAN_STATE="ok"; WAN_DOWN_SINCE=0; vpn_ok=0
 
     mkdir -p "$LOG_DIR" 2>/dev/null
@@ -1071,6 +1099,12 @@ main_loop() {
         # повторная загрузка конфига.
         if ! config_exists && iface_exists; then
             kill_orphan
+        fi
+
+        # Конфиг удалён — цепочки больше нет, и следующая её установка
+        # снова будет первой, а не «восстановлением после потери».
+        if ! config_exists; then
+            CHAIN_ESTABLISHED=0
         fi
 
         if [ "$VPN_STATE" = "stopped" ]; then
