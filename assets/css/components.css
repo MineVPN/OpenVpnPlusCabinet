@@ -1,0 +1,523 @@
+/* ══════════════════════════════════════════════════════════════
+   OVPNPlus — компоненты
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Карточка ─────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-lg);
+  padding: var(--s-6);
+  box-shadow: var(--shadow-sm);
+}
+
+.card--spaced { margin-top: var(--s-5); }
+
+.card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  margin-bottom: var(--s-5);
+  flex-wrap: wrap;
+}
+
+.card__title { font-size: var(--fs-md); }
+
+.card__lead {
+  color: var(--text-dim);
+  line-height: 1.7;
+  margin-bottom: var(--s-5);
+}
+
+.card__hint {
+  margin-top: var(--s-4);
+  color: var(--text-faint);
+  font-size: var(--fs-xs);
+  line-height: 1.65;
+}
+
+/* ── Кнопки ───────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  padding: 11px var(--s-5);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--dur) var(--ease),
+              border-color var(--dur) var(--ease),
+              transform var(--dur) var(--ease);
+}
+
+.btn:hover:not(:disabled) { background: var(--surface-hi); }
+.btn:active:not(:disabled) { transform: translateY(1px); }
+
+.btn:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.btn--block { width: 100%; }
+.btn--sm    { padding: 6px var(--s-3); font-size: var(--fs-xs); }
+.btn--spaced { margin-top: var(--s-4); }
+
+/* Градиент только у главного действия страницы. Если он всюду — это шум. */
+.btn--primary {
+  background: var(--grad-primary);
+  border-color: transparent;
+  color: #fff;
+}
+.btn--primary:hover:not(:disabled) {
+  background: var(--grad-primary-2);
+  box-shadow: 0 0 18px var(--accent-glow);
+}
+
+.btn--ok {
+  background: var(--ok-dim);
+  border-color: var(--ok-line);
+  color: #6EE7B7;
+}
+.btn--ok:hover:not(:disabled) { background: rgba(16, 185, 129, .28); }
+
+.btn--danger {
+  background: var(--err-dim);
+  border-color: var(--err-line);
+  color: #FDA4AF;
+}
+.btn--danger:hover:not(:disabled) { background: rgba(244, 63, 94, .28); }
+
+/* ── Значки состояния ─────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px var(--s-3);
+  border-radius: var(--r-full);
+  border: 1px solid transparent;
+  font-size: var(--fs-xs);
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.badge--ok   { background: var(--ok-dim);     border-color: var(--ok-line);     color: #6EE7B7; }
+.badge--warn { background: var(--warn-dim);   border-color: var(--warn-line);   color: #FCD34D; }
+.badge--err  { background: var(--err-dim);    border-color: var(--err-line);    color: #FDA4AF; }
+.badge--off  { background: var(--surface-2);  border-color: var(--line);        color: var(--text-faint); }
+
+/* ── Точка состояния ──────────────────────────────────────── */
+.dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: var(--r-full);
+  flex: 0 0 auto;
+  background: var(--text-faint);
+}
+
+.dot--ok   { background: var(--ok);   box-shadow: 0 0 0 3px var(--ok-dim); }
+.dot--warn { background: var(--warn); box-shadow: 0 0 0 3px var(--warn-dim); }
+.dot--err  { background: var(--err);  box-shadow: 0 0 0 3px var(--err-dim); }
+.dot--off  { background: var(--surface-hi); }
+
+/* ── Уведомление над страницей ────────────────────────────── */
+.notice {
+  padding: var(--s-4) var(--s-5);
+  border-radius: var(--r-md);
+  border: 1px solid;
+  margin-bottom: var(--s-5);
+  font-size: var(--fs-sm);
+  line-height: 1.65;
+}
+
+.notice--ok  { background: var(--ok-dim);  border-color: var(--ok-line);  color: #A7F3D0; }
+.notice--err { background: var(--err-dim); border-color: var(--err-line); color: #FECDD3; }
+
+/* ── Главный показатель карточки ──────────────────────────── */
+.hero {
+  background: var(--bg-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+  padding: var(--s-5);
+}
+
+.hero__k {
+  font-size: var(--fs-xs);
+  color: var(--text-faint);
+  margin-bottom: var(--s-2);
+}
+
+.hero__v {
+  font-family: var(--font-data);
+  font-size: var(--fs-lg);
+  font-weight: 650;
+  word-break: break-all;
+  line-height: 1.2;
+}
+
+.hero__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin-top: var(--s-3);
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+}
+
+/* ── Пары «подпись — значение» ────────────────────────────── */
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.facts--gap { margin-top: var(--s-5); }
+
+/* Сетка для страниц, где показателей много и они короткие. */
+.facts--grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--s-4);
+}
+
+.facts--grid .fact {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s-1);
+  background: var(--bg-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+  padding: var(--s-3) var(--s-4);
+}
+
+.fact {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-4);
+}
+
+.fact__k {
+  color: var(--text-faint);
+  font-size: var(--fs-xs);
+}
+
+.fact__v {
+  font-family: var(--font-data);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  text-align: right;
+  word-break: break-all;
+}
+
+.facts--grid .fact__v { text-align: left; font-size: var(--fs-md); }
+
+.fact__v--ok  { color: #6EE7B7; }
+.fact__v--err { color: #FDA4AF; }
+
+/* ── Формы в карточке ─────────────────────────────────────── */
+.form-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  margin-top: var(--s-6);
+}
+
+/* ── Зона загрузки файла ──────────────────────────────────── */
+.drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-1);
+  min-height: 132px;
+  padding: var(--s-5);
+  background: var(--bg-2);
+  border: 1.5px dashed var(--line);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  text-align: center;
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+
+.drop:hover,
+.drop--hot {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.drop__main { font-weight: 600; font-size: var(--fs-sm); }
+.drop__main--err { color: var(--err); }
+.drop__sub  { font-size: var(--fs-xs); color: var(--text-faint); }
+
+.drop__file {
+  font-family: var(--font-data);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--ok);
+  word-break: break-all;
+}
+
+/* ── Списки элементов ─────────────────────────────────────── */
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding: var(--s-3) var(--s-4);
+  background: var(--bg-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+}
+
+.item form { margin: 0; }
+
+.item__v {
+  font-family: var(--font-data);
+  font-size: var(--fs-sm);
+  word-break: break-all;
+}
+
+/* Вариант списка с радиокнопкой и пояснением. */
+.item--choice {
+  align-items: flex-start;
+  gap: var(--s-4);
+  cursor: pointer;
+}
+
+.item--choice input {
+  margin-top: 5px;
+  width: 17px;
+  height: 17px;
+  accent-color: var(--accent);
+  flex: 0 0 auto;
+  cursor: pointer;
+}
+
+.item--choice input.radio--warn { accent-color: var(--warn); }
+
+.choice__title {
+  display: block;
+  font-weight: 650;
+  margin-bottom: 3px;
+}
+
+.choice__note {
+  display: block;
+  color: var(--text-dim);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+}
+
+.empty {
+  padding: var(--s-8) var(--s-4);
+  text-align: center;
+  color: var(--text-faint);
+  font-size: var(--fs-sm);
+}
+
+/* ── Журнал ───────────────────────────────────────────────── */
+.log {
+  margin-top: var(--s-4);
+  height: 460px;
+  overflow-y: auto;
+  background: var(--bg-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+  padding: var(--s-3);
+}
+
+.log--ping { height: 340px; margin-top: 0; }
+
+.logline {
+  display: flex;
+  gap: var(--s-3);
+  padding: 5px var(--s-3);
+  border-radius: var(--r-sm);
+  font-family: var(--font-data);
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  color: var(--text-dim);
+  border-left: 2px solid transparent;
+}
+
+.logline:hover { background: var(--surface); }
+
+.logline--ok   { border-left-color: var(--ok);   color: var(--text); }
+.logline--warn { border-left-color: var(--warn); color: #FCD34D; background: var(--warn-dim); }
+.logline--err  { border-left-color: var(--err);  color: #FDA4AF; background: var(--err-dim); }
+
+.logline__t { flex: 0 0 auto; color: var(--text-faint); }
+.logline__s { flex: 0 0 auto; color: var(--text-faint); opacity: .8; }
+.logline__m { flex: 1 1 auto; min-width: 0; word-break: break-word; }
+
+/* ── Схема цепочки на странице инструкции ─────────────────── */
+.chain {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  padding: var(--s-5);
+  background: var(--bg-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+}
+
+.chain__node {
+  padding: var(--s-2) var(--s-4);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-full);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.chain__node--self {
+  background: var(--accent-dim);
+  border-color: var(--accent-line);
+  color: var(--accent-hi);
+}
+
+.chain__arrow { color: var(--text-faint); }
+
+/* ── Пронумерованные шаги ─────────────────────────────────── */
+.steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.steps li {
+  position: relative;
+  padding-left: 46px;
+  color: var(--text-dim);
+  font-size: var(--fs-sm);
+  line-height: 1.7;
+}
+
+.steps li::before {
+  counter-increment: step;
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-full);
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-line);
+  color: var(--accent-hi);
+  font-family: var(--font-data);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+
+.steps__t {
+  display: block;
+  color: var(--text);
+  font-weight: 650;
+  margin-bottom: 2px;
+}
+
+/* ── Вопрос-ответ ─────────────────────────────────────────── */
+.qa {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.qa__q {
+  font-weight: 650;
+  margin-top: var(--s-3);
+}
+
+.qa__q:first-child { margin-top: 0; }
+
+.qa__a {
+  color: var(--text-dim);
+  font-size: var(--fs-sm);
+  line-height: 1.7;
+  padding-bottom: var(--s-2);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.qa__a:last-child { border-bottom: 0; }
+
+/* ── Страница входа ───────────────────────────────────────── */
+.auth {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s-5);
+}
+
+.auth__card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-xl);
+  padding: var(--s-8);
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+}
+
+.auth__logo {
+  width: 68px;
+  height: 68px;
+  border-radius: var(--r-lg);
+  object-fit: cover;
+  margin-bottom: var(--s-4);
+}
+
+.auth__title {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  letter-spacing: -.01em;
+}
+
+.auth__sub {
+  color: var(--text-faint);
+  font-size: var(--fs-xs);
+  margin-bottom: var(--s-6);
+}
+
+.auth__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  text-align: left;
+}
+
+.auth__err {
+  padding: var(--s-3) var(--s-4);
+  background: var(--err-dim);
+  border: 1px solid var(--err-line);
+  border-radius: var(--r-md);
+  color: #FECDD3;
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+}
