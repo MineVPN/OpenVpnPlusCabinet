@@ -21,27 +21,32 @@
   height: 100vh;
 }
 
+/* Логотип крупный и по центру: это единственный брендовый элемент
+   в интерфейсе, где всё остальное — данные и кнопки. */
 .side__brand {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: var(--s-3);
-  padding: 0 var(--s-3) var(--s-6);
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-2) var(--s-6);
   margin-bottom: var(--s-4);
   border-bottom: 1px solid var(--line-soft);
+  text-align: center;
 }
 
 .side__logo {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--r-md);
+  width: 108px;
+  height: 108px;
   flex: 0 0 auto;
-  object-fit: cover;
+  /* contain, а не cover: логотип нельзя обрезать по краям. */
+  object-fit: contain;
+  animation: float 5.5s ease-in-out infinite;
 }
 
 .side__name {
   font-size: var(--fs-md);
   font-weight: 700;
-  letter-spacing: -.01em;
+  letter-spacing: -.02em;
 }
 
 .side__sub {
@@ -152,7 +157,17 @@
     border-bottom: 1px solid var(--line-soft);
   }
 
-  .side__brand { padding-bottom: var(--s-4); margin-bottom: var(--s-3); }
+  /* На узком экране меню становится верхней полосой, и логотип
+     во всю ширину съел бы первый экран целиком. Возвращаем строку. */
+  .side__brand {
+    flex-direction: row;
+    padding: 0 var(--s-2) var(--s-4);
+    margin-bottom: var(--s-3);
+    text-align: left;
+    gap: var(--s-3);
+  }
+
+  .side__logo { width: 56px; height: 56px; }
 
   .side__nav {
     flex-direction: row;
@@ -179,5 +194,5 @@
 @media (max-width: 560px) {
   .row { flex-wrap: wrap; }
   .row .btn { width: 100%; }
-  .input--select { width: 100%; min-width: 0; }
+  .select { width: 100%; }
 }

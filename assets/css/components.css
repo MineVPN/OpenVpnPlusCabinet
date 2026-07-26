@@ -329,141 +329,313 @@
   font-size: var(--fs-sm);
 }
 
-/* ── Журнал ───────────────────────────────────────────────── */
-.log {
-  margin-top: var(--s-4);
-  height: 460px;
-  overflow-y: auto;
-  background: var(--bg-2);
-  border: 1px solid var(--line-soft);
-  border-radius: var(--r-md);
-  padding: var(--s-3);
+/* ── Пингер: панель управления ─────────────────────────────
+   Адрес тянется, выбор пути фиксирован, кнопки по содержимому. */
+.ping-controls {
+  display: grid;
+  grid-template-columns: 1fr 260px auto;
+  gap: var(--s-3);
+  align-items: end;
 }
 
-.log--ping { height: 340px; margin-top: 0; }
+.ping-controls__btns { display: flex; gap: var(--s-2); }
 
-.logline {
-  display: flex;
+@media (max-width: 860px) {
+  .ping-controls { grid-template-columns: 1fr; }
+  .ping-controls__btns .btn { flex: 1 1 0; }
+}
+
+/* ── Пингер: показатели ────────────────────────────────────
+   Подпись слева, число справа — так колонки цифр выравниваются
+   между собой, а не пляшут по центру плиток. */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--s-3);
-  padding: 5px var(--s-3);
-  border-radius: var(--r-sm);
+}
+
+.stats--top { margin-bottom: var(--s-3); }
+
+.stat {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-2);
+  background: var(--surface-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+  padding: var(--s-3) var(--s-4);
+}
+
+.stat__k { font-size: var(--fs-sm); color: var(--text-faint); }
+
+.stat__v {
+  font-family: var(--font-data);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  /* Моноширинные цифры: иначе число дёргается при каждом обновлении. */
+  font-variant-numeric: tabular-nums;
+}
+
+.stat__u { font-size: var(--fs-xs); color: var(--text-faint); margin-left: var(--s-1); }
+
+.stat--ok   .stat__v { color: var(--ok); }
+.stat--err  .stat__v { color: var(--err); }
+.stat--warn .stat__v { color: var(--warn); }
+.stat--info .stat__v { color: var(--accent-hi); }
+
+@media (max-width: 1024px) {
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ── Пингер: поток замеров ─────────────────────────────────── */
+.pinglog {
+  height: 380px;
+  background: var(--bg);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+  padding: var(--s-3) var(--s-4);
+  font-family: var(--font-data);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+  overflow-y: auto;
+}
+
+.pinglog p { margin: 0; padding: 2px 0; color: var(--text-faint); }
+.pinglog p.ok   { color: var(--ok); }
+.pinglog p.slow { color: var(--warn); }
+.pinglog p.fail { color: var(--err); }
+
+.card--pinglog { padding: var(--s-3); }
+
+/* ── Журнал событий ────────────────────────────────────────
+   Высота в vh, а не в пикселях: на большом мониторе видно заметно
+   больше строк, а на ноутбуке лента не выдавливает всё остальное. */
+.console {
+  background: var(--bg);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+  padding: var(--s-4);
   font-family: var(--font-data);
   font-size: var(--fs-xs);
-  line-height: 1.5;
-  color: var(--text-dim);
-  border-left: 2px solid transparent;
+  line-height: 1.7;
+  overflow: auto;
+  height: 60vh;
+  min-height: 320px;
 }
 
-.logline:hover { background: var(--surface); }
-
-.logline--ok   { border-left-color: var(--ok);   color: var(--text); }
-.logline--warn { border-left-color: var(--warn); color: #FCD34D; background: var(--warn-dim); }
-.logline--err  { border-left-color: var(--err);  color: #FDA4AF; background: var(--err-dim); }
-
-.logline__t { flex: 0 0 auto; color: var(--text-faint); }
-.logline__s { flex: 0 0 auto; color: var(--text-faint); opacity: .8; }
-.logline__m { flex: 1 1 auto; min-width: 0; word-break: break-word; }
-
-/* ── Схема цепочки на странице инструкции ─────────────────── */
-.chain {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
+/* Строка: время — источник — текст. Колонки фиксированной ширины,
+   чтобы взгляд шёл вертикально по времени, а не спотыкался о разную
+   длину сообщений. */
+.line {
+  display: grid;
+  grid-template-columns: 150px 74px minmax(0, 1fr);
   gap: var(--s-3);
-  padding: var(--s-5);
+  padding: 1px 0;
+}
+
+.line__t   { color: var(--text-faint); }
+.line__src { color: var(--text-faint); }
+.line__m   { color: var(--text-dim); word-break: break-word; }
+
+.line--ok   .line__m { color: var(--ok); }
+.line--warn .line__m { color: var(--warn); }
+.line--err  .line__m { color: var(--err); }
+
+/* На узком экране колонки схлопываются: три жёстких столбца
+   не оставили бы места самому тексту. */
+@media (max-width: 760px) {
+  .line { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .line__t, .line__src { display: inline; margin-right: var(--s-2); }
+}
+
+.faint { color: var(--text-faint); }
+
+/* Сводка под журналом: сколько записей, размер файла, время обновления. */
+.log-meta {
+  display: flex;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+  margin-top: var(--s-3);
+  font-size: var(--fs-xs);
+  color: var(--text-faint);
+}
+
+.select--auto { width: auto; }
+
+/* ── Схема цепочки на странице инструкции ───────────────────
+   Горизонтальная лента из карточек со стрелками. На узком экране
+   прокручивается вбок, а не ломается: цепочка читается только
+   целиком, перенос на вторую строку разрывает смысл. */
+.flow {
+  display: flex;
+  align-items: stretch;
+  gap: var(--s-2);
+  padding: var(--s-5) var(--s-4);
   background: var(--bg-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+  overflow-x: auto;
+}
+
+.flow__node {
+  flex: 1 1 0;
+  min-width: 128px;
+  text-align: center;
+  padding: var(--s-3) var(--s-2);
+  background: var(--surface);
   border: 1px solid var(--line-soft);
   border-radius: var(--r-md);
 }
 
-.chain__node {
-  padding: var(--s-2) var(--s-4);
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r-full);
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  white-space: nowrap;
-}
+/* Наш сервер выделяем: человек должен сразу видеть своё место в цепочке. */
+.flow__node--accent { border-color: var(--accent-line); background: var(--accent-dim); }
 
-.chain__node--self {
-  background: var(--accent-dim);
-  border-color: var(--accent-line);
-  color: var(--accent-hi);
-}
+.flow__icon { font-size: 22px; line-height: 1.2; }
+.flow__name { font-weight: 650; font-size: var(--fs-sm); margin-top: var(--s-1); }
+.flow__sub  { font-size: var(--fs-xs); color: var(--text-faint); line-height: 1.35; }
 
-.chain__arrow { color: var(--text-faint); }
+.flow__arrow {
+  flex: 0 0 auto;
+  align-self: center;
+  color: var(--text-faint);
+  font-size: 18px;
+}
 
 /* ── Пронумерованные шаги ─────────────────────────────────── */
-.steps {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  counter-reset: step;
-  display: flex;
-  flex-direction: column;
+.steps { display: flex; flex-direction: column; gap: var(--s-5); }
+
+.step {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
   gap: var(--s-4);
+  align-items: start;
 }
 
-.steps li {
-  position: relative;
-  padding-left: 46px;
-  color: var(--text-dim);
-  font-size: var(--fs-sm);
-  line-height: 1.7;
-}
-
-.steps li::before {
-  counter-increment: step;
-  content: counter(step);
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--r-full);
+.step__num {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
   background: var(--accent-dim);
   border: 1px solid var(--accent-line);
   color: var(--accent-hi);
-  font-family: var(--font-data);
-  font-size: var(--fs-xs);
   font-weight: 700;
+  font-size: var(--fs-md);
+  font-family: var(--font-data);
 }
 
-.steps__t {
-  display: block;
-  color: var(--text);
-  font-weight: 650;
-  margin-bottom: 2px;
+.step__title { font-size: var(--fs-md); font-weight: 650; margin-bottom: var(--s-2); }
+.step__body  { color: var(--text-dim); line-height: 1.65; }
+.step__body p { margin-bottom: var(--s-2); }
+.step__body p:last-child { margin-bottom: 0; }
+.step__body strong { color: var(--text); font-weight: 600; }
+.step__body code {
+  background: var(--bg-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-sm);
+  padding: 1px 5px;
+  font-size: var(--fs-xs);
 }
 
-/* ── Вопрос-ответ ─────────────────────────────────────────── */
-.qa {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-2);
+@media (max-width: 560px) {
+  .step { grid-template-columns: 32px minmax(0, 1fr); gap: var(--s-3); }
+  .step__num { width: 32px; height: 32px; font-size: var(--fs-sm); }
+}
+
+/* ── Список с иконками ────────────────────────────────────── */
+.bullets { display: flex; flex-direction: column; gap: var(--s-3); }
+
+.bullet {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: var(--s-3);
+  align-items: start;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+.bullet__mark { font-size: var(--fs-md); line-height: 1.4; }
+.bullet strong { color: var(--text); font-weight: 600; }
+
+/* ── Выделенный блок: то, что человек обязан прочитать ────── */
+.callout {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: var(--s-3);
+  padding: var(--s-4) var(--s-5);
+  border-radius: var(--r-md);
+  border: 1px solid;
+  line-height: 1.6;
+}
+
+.callout__mark { font-size: var(--fs-md); line-height: 1.4; }
+.callout--warn { background: var(--warn-dim);   border-color: var(--warn-line);   color: var(--text); }
+.callout--info { background: var(--accent-dim); border-color: var(--accent-line); color: var(--text); }
+.callout--ok   { background: var(--ok-dim);     border-color: var(--ok-line);     color: var(--text); }
+.callout--spaced { margin-top: var(--s-5); }
+.callout--tight  { margin-top: var(--s-3); }
+
+/* ── Вопрос-ответ: раскрывающиеся блоки ────────────────────
+   details/summary вместо простого списка — на странице десяток
+   вопросов, и развёрнутые ответы превращают её в стену текста. */
+.qa { display: flex; flex-direction: column; gap: var(--s-2); }
+
+.qa__item {
+  background: var(--surface-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+  padding: var(--s-4) var(--s-5);
 }
 
 .qa__q {
   font-weight: 650;
-  margin-top: var(--s-3);
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
 }
 
-.qa__q:first-child { margin-top: 0; }
+.qa__q::-webkit-details-marker { display: none; }
+
+.qa__q::before {
+  content: "+";
+  color: var(--accent-hi);
+  font-family: var(--font-data);
+  font-size: var(--fs-md);
+}
+
+.qa__item[open] .qa__q::before { content: "−"; }
 
 .qa__a {
   color: var(--text-dim);
-  font-size: var(--fs-sm);
-  line-height: 1.7;
-  padding-bottom: var(--s-2);
-  border-bottom: 1px solid var(--line-soft);
+  line-height: 1.65;
+  margin-top: var(--s-3);
+  padding-left: calc(var(--s-3) + 10px);
 }
 
-.qa__a:last-child { border-bottom: 0; }
+.qa__a p { margin-bottom: var(--s-2); }
+.qa__a p:last-child { margin-bottom: 0; }
+.qa__a strong { color: var(--text); font-weight: 600; }
+.qa__a code {
+  background: var(--bg-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-sm);
+  padding: 1px 5px;
+  font-size: var(--fs-xs);
+}
+
+/* Описание разделов панели: подпись слева, проза справа. */
+.fact--prose .fact__k { font-weight: 600; color: var(--text); }
+.fact--prose .fact__v {
+  font-family: var(--font-ui);
+  font-weight: 400;
+  text-align: right;
+  max-width: 60%;
+  color: var(--text-dim);
+}
 
 /* ── Страница входа ───────────────────────────────────────── */
 .auth {
@@ -476,21 +648,23 @@
 
 .auth__card {
   width: 100%;
-  max-width: 380px;
+  max-width: 400px;
   background: var(--surface);
   border: 1px solid var(--line-soft);
   border-radius: var(--r-xl);
-  padding: var(--s-8);
+  /* Вертикальных отступов больше горизонтальных: крупному логотипу
+     нужен воздух сверху, иначе он упирается в край карточки. */
+  padding: var(--s-10) var(--s-8);
   box-shadow: var(--shadow-lg);
   text-align: center;
 }
 
 .auth__logo {
-  width: 68px;
-  height: 68px;
-  border-radius: var(--r-lg);
-  object-fit: cover;
-  margin-bottom: var(--s-4);
+  width: 168px;
+  height: 168px;
+  object-fit: contain;
+  margin-bottom: var(--s-5);
+  animation: float 5.5s ease-in-out infinite;
 }
 
 .auth__title {

@@ -83,78 +83,103 @@ function ovpInitRemotePing(host) {
   setInterval(check, 10000);
 }
 
-/* ── Журнал ──────────────────────────────────────────────────── */
+/* ── Журнал событий ──────────────────────────────────────────── */
 function ovpInitLogs() {
-  var box      = document.getElementById('log-box'),
-      meta     = document.getElementById('log-meta'),
-      problems = document.getElementById('log-problems'),
-      auto     = document.getElementById('log-auto'),
-      refresh  = document.getElementById('log-refresh');
+  var $ = function (id) { return document.getElementById(id); };
+
+  var box      = $('log'),
+      linesSel = $('lines'),
+      onlyBad  = $('only-problems'),
+      auto     = $('auto'),
+      btn      = $('refresh');
   if (!box) return;
 
-  var timer = null;
+  var timer = null, busy = false;
+
+  function human(b) {
+    if (b < 1024) return b + ' Б';
+    if (b < 1048576) return (b / 1024).toFixed(1) + ' КБ';
+    return (b / 1048576).toFixed(1) + ' МБ';
+  }
 
   function render(rows) {
+    box.textContent = '';
     if (!rows.length) {
-      box.innerHTML = '';
       var e = document.createElement('div');
-      e.className = 'empty';
-      e.textContent = problems && problems.checked
+      e.className = 'faint';
+      e.textContent = (onlyBad && onlyBad.checked)
         ? 'Проблем не зафиксировано.'
-        : 'Журнал пока пуст.';
+        : 'Пока ничего не записано.';
       box.appendChild(e);
       return;
     }
 
-    // Держим прокрутку внизу, если пользователь оттуда не уходил.
-    var atBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 40;
-
-    box.innerHTML = '';
+    // Собираем во фрагменте: при 1500 строках вставка по одной
+    // заставляет браузер пересчитывать раскладку на каждой.
+    var frag = document.createDocumentFragment();
     rows.forEach(function (r) {
-      var line = document.createElement('div');
-      line.className = 'logline' + (r.level ? ' logline--' + r.level : '');
+      var el = document.createElement('div');
+      el.className = 'line' + (r.level ? ' line--' + r.level : '');
 
-      if (r.time) {
-        var t = document.createElement('span');
-        t.className = 'logline__t';
-        t.textContent = r.time;
-        line.appendChild(t);
-      }
-      if (r.source) {
-        var s = document.createElement('span');
-        s.className = 'logline__s';
-        s.textContent = r.source;
-        line.appendChild(s);
-      }
+      var t = document.createElement('span');
+      t.className = 'line__t';
+      t.textContent = r.time;
+
+      var s = document.createElement('span');
+      s.className = 'line__src';
+      s.textContent = r.source;
+
       var m = document.createElement('span');
-      m.className = 'logline__m';
+      m.className = 'line__m';
       m.textContent = r.text;
-      line.appendChild(m);
 
-      box.appendChild(line);
+      el.appendChild(t); el.appendChild(s); el.appendChild(m);
+      frag.appendChild(el);
     });
+    box.appendChild(frag);
+    box.scrollTop = box.scrollHeight;
+  }
 
-    if (atBottom) box.scrollTop = box.scrollHeight;
+  function set(id, v) {
+    var el = $(id);
+    if (el) el.textContent = v;
   }
 
   function load() {
-    var url = 'api/logs.php?lines=600';
-    if (problems && problems.checked) url += '&only=problems';
+    // Защита от наложения запросов: на большом журнале ответ может
+    // прийти позже следующего тика автообновления.
+    if (busy) return;
+    busy = true;
 
-    fetch(url, { credentials: 'same-origin' })
+    var url = 'api/logs.php?lines=' + encodeURIComponent(linesSel ? linesSel.value : 500) +
+              ((onlyBad && onlyBad.checked) ? '&only=problems' : '');
+
+    fetch(url, { cache: 'no-store', credentials: 'same-origin' })
       .then(function (r) {
         if (r.status === 403) { window.location = 'login.php'; return null; }
         return r.json();
       })
       .then(function (d) {
         if (!d) return;
-        if (!d.ok) { return; }
+        if (!d.ok) throw new Error();
+        set('count', d.count);
+        set('size', human(d.size));
+        set('at', d.at);
         render(d.rows || []);
-        if (meta) {
-          meta.textContent = (d.count || 0) + ' строк · ' + (d.at || '');
-        }
       })
-      .catch(function () { /* сеть моргнула — покажем на следующем цикле */ });
+      .catch(function () {
+        box.innerHTML = '';
+        var el = document.createElement('div');
+        el.className = 'line line--err';
+        var m = document.createElement('span');
+        m.className = 'line__m';
+        m.textContent = 'Не удалось загрузить события.';
+        el.appendChild(document.createElement('span'));
+        el.appendChild(document.createElement('span'));
+        el.appendChild(m);
+        box.appendChild(el);
+      })
+      .then(function () { busy = false; });
   }
 
   function retime() {
@@ -162,9 +187,10 @@ function ovpInitLogs() {
     if (auto && auto.checked) timer = setInterval(load, 5000);
   }
 
-  if (problems) problems.addEventListener('change', load);
+  if (linesSel) linesSel.addEventListener('change', load);
+  if (onlyBad)  onlyBad.addEventListener('change', load);
   if (auto)     auto.addEventListener('change', retime);
-  if (refresh)  refresh.addEventListener('click', load);
+  if (btn)      btn.addEventListener('click', load);
   window.addEventListener('beforeunload', function () { if (timer) clearInterval(timer); });
 
   load();
@@ -173,103 +199,113 @@ function ovpInitLogs() {
 
 /* ── Пинг-монитор ────────────────────────────────────────────── */
 function ovpInitPinger() {
-  var hostEl  = document.getElementById('ping-host'),
-      ifaceEl = document.getElementById('ping-iface'),
-      startEl = document.getElementById('ping-start'),
-      stopEl  = document.getElementById('ping-stop'),
-      logEl   = document.getElementById('ping-log');
-  if (!hostEl || !startEl || !stopEl || !logEl) return;
+  var $ = function (id) { return document.getElementById(id); };
 
-  var timer = null, s = null;
+  var hostEl = $('host'), pathEl = $('path'),
+      goEl   = $('go'),   stopEl = $('stop'),
+      logEl  = $('pinglog');
+  if (!hostEl || !goEl || !stopEl || !logEl) return;
 
-  function reset() {
-    s = { all: 0, ok: 0, fail: 0, min: Infinity, max: -Infinity, sum: 0 };
-  }
+  var timer = null,
+      all = 0, ok = 0, lost = 0,
+      min = Infinity, max = -Infinity, sum = 0;
 
   function set(id, v) {
-    var el = document.getElementById(id);
+    var el = $(id);
     if (el) el.textContent = v;
   }
 
-  function line(text, kind) {
-    var p = document.createElement('div');
-    p.className = 'logline' + (kind ? ' logline--' + kind : '');
+  function reset() {
+    all = ok = lost = sum = 0;
+    min = Infinity; max = -Infinity;
+    set('s-all', '0'); set('s-ok', '0'); set('s-lost', '0'); set('s-loss', '0%');
+    set('s-min', '—'); set('s-avg', '—'); set('s-max', '—'); set('s-last', '—');
+    logEl.innerHTML = '';
+  }
+
+  function add(text, cls) {
+    var p = document.createElement('p');
     p.textContent = text;
+    if (cls) p.className = cls;
     logEl.appendChild(p);
-    // Не даём журналу расти бесконечно при многочасовом мониторинге.
+    // Ограничение памяти: держим последние 500 замеров.
+    // Считаем и удаляем именно элементы — с firstChild любой текстовый узел
+    // в начале контейнера превратил бы это в вечный цикл.
     while (logEl.childElementCount > 500) logEl.removeChild(logEl.firstElementChild);
     logEl.scrollTop = logEl.scrollHeight;
   }
 
-  function render(last) {
-    set('p-all', s.all);
-    set('p-ok', s.ok);
-    set('p-fail', s.fail);
-    var total = s.ok + s.fail;
-    set('p-loss', (total ? (s.fail / total * 100) : 0).toFixed(1) + '%');
-    set('p-min', s.min === Infinity ? '—' : s.min.toFixed(1));
-    set('p-max', s.max === -Infinity ? '—' : s.max.toFixed(1));
-    var avg = s.sum / s.ok;
-    set('p-avg', isNaN(avg) ? '—' : avg.toFixed(1));
-    set('p-last', isNaN(last) ? '—' : last.toFixed(1));
-  }
+  function measure(target, via) {
+    var url = 'api/ping.php?host=' + encodeURIComponent(target);
+    if (via) url += '&iface=' + encodeURIComponent(via);
 
-  function tick() {
-    var host  = hostEl.value.trim();
-    var iface = ifaceEl ? ifaceEl.value : '';
-    var url   = 'api/ping.php?host=' + encodeURIComponent(host);
-    if (iface) url += '&iface=' + encodeURIComponent(iface);
-
-    fetch(url, { credentials: 'same-origin' })
+    fetch(url, { cache: 'no-store', credentials: 'same-origin' })
       .then(function (r) {
         if (r.status === 403) { window.location = 'login.php'; return null; }
         return r.text();
       })
-      .then(function (t) {
-        if (t === null) return;
+      .then(function (data) {
+        if (data === null) return;
         var now = new Date().toLocaleTimeString();
-        var ms  = parseFloat(t);
-        s.all++;
+        all++;
+        var ms = NaN;
 
-        if (t.indexOf('NO PING') !== -1 || isNaN(ms)) {
-          s.fail++;
-          line('[' + now + '] ' + host + ' — нет ответа', 'err');
-          render(NaN);
-          return;
+        if (data.indexOf('NO PING') === -1) {
+          ok++;
+          ms = parseFloat(data);
+          if (!isNaN(ms)) {
+            min = Math.min(min, ms);
+            max = Math.max(max, ms);
+            sum += ms;
+            var avg = sum / ok;
+            // Всплеск: заметно выше среднего — помечаем жёлтым.
+            add(now + '  ·  ping → ' + target + '  ·  ' + ms.toFixed(1) + ' мс',
+                ms > avg + 20 ? 'slow' : 'ok');
+          } else {
+            add(now + '  ·  ping → ' + target + '  ·  ответ есть', 'ok');
+          }
+        } else {
+          lost++;
+          add(now + '  ·  ping → ' + target + '  ·  нет ответа', 'fail');
         }
 
-        s.ok++;
-        s.sum += ms;
-        s.min = Math.min(s.min, ms);
-        s.max = Math.max(s.max, ms);
-        var avg = s.sum / s.ok;
-        line('[' + now + '] ' + host + ' — ' + ms.toFixed(1) + ' мс',
-             (!isNaN(avg) && ms > avg + 20) ? 'warn' : 'ok');
-        render(ms);
+        set('s-all', all);
+        set('s-ok', ok);
+        set('s-lost', lost);
+        set('s-loss', (all === 0 ? 0 : lost / all * 100).toFixed(1) + '%');
+        set('s-min', (min === Infinity) ? '—' : min.toFixed(1));
+        set('s-max', (max === -Infinity) ? '—' : max.toFixed(1));
+        var a = sum / ok;
+        set('s-avg', isNaN(a) ? '—' : a.toFixed(1));
+        set('s-last', isNaN(ms) ? '—' : ms.toFixed(1));
       })
       .catch(function () {
-        s.all++; s.fail++;
-        line('[' + new Date().toLocaleTimeString() + '] ошибка запроса', 'err');
-        render(NaN);
+        all++; lost++;
+        set('s-all', all);
+        set('s-lost', lost);
+        add(new Date().toLocaleTimeString() + '  ·  панель не ответила', 'fail');
       });
   }
 
-  startEl.addEventListener('click', function () {
-    if (!hostEl.value.trim()) return;
+  goEl.addEventListener('click', function () {
+    var target = hostEl.value.trim();
+    if (!target) { add('Введите адрес для проверки', 'fail'); return; }
     if (timer) clearInterval(timer);
-    logEl.innerHTML = '';
     reset();
-    render(NaN);
-    tick();
-    timer = setInterval(tick, 1000);
+    var via = pathEl ? pathEl.value : '';
+    measure(target, via);
+    timer = setInterval(function () { measure(target, via); }, 1000);
   });
 
   stopEl.addEventListener('click', function () {
-    if (timer) { clearInterval(timer); timer = null; }
+    if (timer) { clearInterval(timer); timer = null; add('остановлено'); }
+  });
+
+  // Enter в поле адреса запускает проверку.
+  hostEl.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); goEl.click(); }
   });
 
   // Уходя со страницы, гасим таймер, чтобы не слать запросы в фоне.
   window.addEventListener('beforeunload', function () { if (timer) clearInterval(timer); });
-
-  reset();
 }
